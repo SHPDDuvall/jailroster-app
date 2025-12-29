@@ -33,6 +33,18 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
+    # Serverless-friendly database connection settings
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,  # Verify connections before using
+        'pool_recycle': 300,  # Recycle connections after 5 minutes
+        'pool_size': 5,  # Smaller pool for serverless
+        'max_overflow': 2,
+        'connect_args': {
+            'connect_timeout': 10,
+            'options': '-c statement_timeout=30000'  # 30 second query timeout
+        }
+    }
+    
     # Initialize database
     db.init_app(app)
     
