@@ -192,7 +192,12 @@ def generate_pdf_report(records):
     
     # Header Section
     pdf.set_fill_color(25, 25, 112)  # Navy blue background
-    pdf.rect(0, 0, 297, 25, 'F')
+    pdf.rect(0, 0, 297, 30, 'F')
+    
+    # Add logo
+    logo_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'new-shpd-logo.png')
+    if os.path.exists(logo_path):
+        pdf.image(logo_path, x=10, y=5, w=20)  # Logo on the left
     
     # Title
     pdf.set_text_color(255, 255, 255)  # White text
@@ -204,7 +209,7 @@ def generate_pdf_report(records):
     
     # Reset text color and add metadata
     pdf.set_text_color(0, 0, 0)
-    pdf.set_y(30)
+    pdf.set_y(35)
     pdf.set_font('Arial', '', 9)
     pdf.cell(0, 5, f'Report Generated: {datetime.now().strftime("%B %d, %Y at %I:%M %p")}', ln=True, align='R')
     pdf.cell(0, 5, f'Total Records: {len(records)}', ln=True, align='R')
