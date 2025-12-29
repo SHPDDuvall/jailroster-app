@@ -38,11 +38,7 @@ def create_app():
         'pool_pre_ping': True,  # Verify connections before using
         'pool_recycle': 300,  # Recycle connections after 5 minutes
         'pool_size': 5,  # Smaller pool for serverless
-        'max_overflow': 2,
-        'connect_args': {
-            'connect_timeout': 10,
-            'options': '-c statement_timeout=30000'  # 30 second query timeout
-        }
+        'max_overflow': 2
     }
     
     # Initialize database
