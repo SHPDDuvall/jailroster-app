@@ -20,7 +20,7 @@ def create_app():
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
     app.config['SESSION_COOKIE_SECURE'] = True  # Always use secure cookies in production
     app.config['SESSION_COOKIE_HTTPONLY'] = True
-    app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Required for cross-origin requests
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Lax for same-domain requests
     app.config['SESSION_COOKIE_NAME'] = 'jail_roster_session'  # Custom session cookie name
     
     # Database configuration
@@ -39,7 +39,7 @@ def create_app():
     # Enable CORS with specific origins
     CORS(app, 
          supports_credentials=True,
-         origins=['https://jailroster.shakerpd.com', 'https://jailroster-deploy.vercel.app', 'https://*.vercel.app'],
+         origins=['https://jailroster.shakerpd.com', 'https://jailroster-deploy.vercel.app'],
          allow_headers=['Content-Type', 'Authorization'],
          methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
     
