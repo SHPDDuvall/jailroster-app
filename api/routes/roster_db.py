@@ -186,60 +186,148 @@ def delete_record(record_id):
 # ============================================================================
 
 def generate_pdf_report(records):
-    """Generate a PDF report from roster records."""
+    """Generate a professionally formatted PDF report from roster records."""
     pdf = FPDF(orientation='L', unit='mm', format='A4')
     pdf.add_page()
-    pdf.set_font('Arial', 'B', 10)
+    
+    # Header Section
+    pdf.set_fill_color(25, 25, 112)  # Navy blue background
+    pdf.rect(0, 0, 297, 25, 'F')
     
     # Title
-    pdf.cell(0, 10, 'Jail Roster Report', ln=True, align='C')
-    pdf.set_font('Arial', '', 8)
-    pdf.cell(0, 5, f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}', ln=True, align='C')
-    pdf.ln(5)
+    pdf.set_text_color(255, 255, 255)  # White text
+    pdf.set_font('Arial', 'B', 18)
+    pdf.set_y(8)
+    pdf.cell(0, 10, 'SHAKER HEIGHTS POLICE DEPARTMENT', ln=True, align='C')
+    pdf.set_font('Arial', 'B', 14)
+    pdf.cell(0, 6, 'Jail Roster Report', ln=True, align='C')
     
-    # Table header
-    col_widths = [15, 20, 15, 15, 20, 15, 15, 15, 15, 20, 15]
-    headers = ['Location', 'Cell', 'Name', 'OCA #', 'Arrest Date', 'Charges', 'Bond', 'Court Date', 'Release Date', 'Status', 'Notes']
+    # Reset text color and add metadata
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_y(30)
+    pdf.set_font('Arial', '', 9)
+    pdf.cell(0, 5, f'Report Generated: {datetime.now().strftime("%B %d, %Y at %I:%M %p")}', ln=True, align='R')
+    pdf.cell(0, 5, f'Total Records: {len(records)}', ln=True, align='R')
+    pdf.ln(3)
     
-    pdf.set_font('Arial', 'B', 7)
-    for i, header in enumerate(headers):
-        pdf.cell(col_widths[i], 8, header, border=1, align='C')
-    pdf.ln()
+    # Separate Active and Released inmates
+    active_inmates = [r for r in records if not r.release_date_time]
+    released_inmates = [r for r in records if r.release_date_time]
     
-    # Table rows
-    pdf.set_font('Arial', '', 6)
-    for record in records:
-        # Status
-        if record.release_date_time:
-            status = 'Released'
-        elif record.court_date:
-            status = 'Pending Court'
-        else:
-            status = 'In Custody'
+    # Active Inmates Section
+    if active_inmates:
+        pdf.set_font('Arial', 'B', 12)
+        pdf.set_fill_color(220, 220, 220)
+        pdf.cell(0, 8, f'Active Inmates in Custody ({len(active_inmates)})', ln=True, fill=True)
+        pdf.ln(2)
         
-        # Format dates
-        arrest_date = record.arrest_date_time.strftime('%m/%d/%Y') if record.arrest_date_time else ''
-        court_date = record.court_date.strftime('%m/%d/%Y') if record.court_date else ''
-        release_date = record.release_date_time.strftime('%m/%d/%Y') if record.release_date_time else ''
+        # Table header for active inmates
+        pdf.set_font('Arial', 'B', 9)
+        pdf.set_fill_color(70, 130, 180)  # Steel blue
+        pdf.set_text_color(255, 255, 255)
         
-        # Row data
-        row_data = [
-            record.jail_location or '',
-            record.cell or '',
-            record.name or '',
-            record.oca_number or '',
-            arrest_date,
-            (record.charges or '')[:15],  # Truncate charges
-            record.bond or '',
-            court_date,
-            release_date,
-            status,
-            (record.holders_notes or '')[:10]  # Truncate notes
-        ]
+        col_widths = [25, 15, 40, 20, 30, 60, 25, 30]
+        headers = ['Location', 'Cell', 'Name', 'OCA #', 'Arrest Date', 'Charges', 'Bond', 'Court Date']
         
-        for i, data in enumerate(row_data):
-            pdf.cell(col_widths[i], 8, str(data), border=1, align='L')
+        for i, header in enumerate(headers):
+            pdf.cell(col_widths[i], 8, header, border=1, fill=True, align='C')
         pdf.ln()
+        
+        # Table rows for active inmates
+        pdf.set_text_color(0, 0, 0)
+        pdf.set_font('Arial', '', 8)
+        
+        for idx, record in enumerate(active_inmates):
+            # Alternate row colors
+            if idx % 2 == 0:
+                pdf.set_fill_color(245, 245, 245)
+            else:
+                pdf.set_fill_color(255, 255, 255)
+            
+            # Format dates
+            arrest_date = record.arrest_date_time.strftime('%m/%d/%Y %H:%M') if record.arrest_date_time else ''
+            court_date = record.court_date.strftime('%m/%d/%Y') if record.court_date else ''
+            
+            # Truncate long text
+            charges = (record.charges or '')[:40] + '...' if record.charges and len(record.charges) > 40 else (record.charges or '')
+            
+            # Row data
+            row_data = [
+                record.jail_location or '',
+                record.cell or '',
+                record.name or '',
+                record.oca_number or '',
+                arrest_date,
+                charges,
+                record.bond or '',
+                court_date
+            ]
+            
+            for i, data in enumerate(row_data):
+                pdf.cell(col_widths[i], 7, str(data), border=1, align='L', fill=True)
+            pdf.ln()
+        
+        pdf.ln(5)
+    
+    # Released Inmates Section
+    if released_inmates:
+        pdf.set_font('Arial', 'B', 12)
+        pdf.set_fill_color(220, 220, 220)
+        pdf.cell(0, 8, f'Released Inmates ({len(released_inmates)})', ln=True, fill=True)
+        pdf.ln(2)
+        
+        # Table header for released inmates
+        pdf.set_font('Arial', 'B', 9)
+        pdf.set_fill_color(169, 169, 169)  # Gray
+        pdf.set_text_color(255, 255, 255)
+        
+        col_widths_rel = [25, 15, 40, 30, 30, 50, 30]
+        headers_rel = ['Location', 'Cell', 'Name', 'Arrest Date', 'Release Date', 'Charges', 'Notes']
+        
+        for i, header in enumerate(headers_rel):
+            pdf.cell(col_widths_rel[i], 8, header, border=1, fill=True, align='C')
+        pdf.ln()
+        
+        # Table rows for released inmates
+        pdf.set_text_color(0, 0, 0)
+        pdf.set_font('Arial', '', 8)
+        
+        for idx, record in enumerate(released_inmates):
+            # Alternate row colors
+            if idx % 2 == 0:
+                pdf.set_fill_color(245, 245, 245)
+            else:
+                pdf.set_fill_color(255, 255, 255)
+            
+            # Format dates
+            arrest_date = record.arrest_date_time.strftime('%m/%d/%Y') if record.arrest_date_time else ''
+            release_date = record.release_date_time.strftime('%m/%d/%Y %H:%M') if record.release_date_time else ''
+            
+            # Truncate long text
+            charges = (record.charges or '')[:35] + '...' if record.charges and len(record.charges) > 35 else (record.charges or '')
+            notes = (record.holders_notes or '')[:20] + '...' if record.holders_notes and len(record.holders_notes) > 20 else (record.holders_notes or '')
+            
+            # Row data
+            row_data = [
+                record.jail_location or '',
+                record.cell or '',
+                record.name or '',
+                arrest_date,
+                release_date,
+                charges,
+                notes
+            ]
+            
+            for i, data in enumerate(row_data):
+                pdf.cell(col_widths_rel[i], 7, str(data), border=1, align='L', fill=True)
+            pdf.ln()
+    
+    # Footer
+    pdf.ln(5)
+    pdf.set_font('Arial', 'I', 8)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(0, 5, 'This document is confidential and for official use only.', ln=True, align='C')
+    pdf.cell(0, 5, 'Shaker Heights Police Department - Jail Management System', ln=True, align='C')
     
     # Return PDF as bytes
     pdf_output = pdf.output(dest='S')
