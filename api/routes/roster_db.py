@@ -7,12 +7,10 @@ from functools import wraps
 from datetime import datetime
 import io
 import os
-import smtplib
 import traceback
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
+import base64
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
 from fpdf import FPDF
 from ..models.roster import db, Roster
 
@@ -274,8 +272,7 @@ def export_pdf():
 @roster_bp.route('/export/pdf/email', methods=['POST'])
 @require_auth
 def export_pdf_email():
-    """Send roster as PDF via email."""
-    server = None
+    """Send roster as PDF via email using SendGrid."""
     try:
         data = request.get_json()
         recipient_email = data.get('email')
@@ -283,16 +280,14 @@ def export_pdf_email():
         if not recipient_email:
             return jsonify({'error': 'Email address is required'}), 400
         
-        # Get SMTP configuration from environment variables
-        smtp_server = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
-        smtp_port = int(os.getenv('SMTP_PORT', '587'))
-        sender_email = os.getenv('SENDER_EMAIL', 'noreply@shakerpd.com')
-        sender_password = os.getenv('SENDER_PASSWORD', '')
+        # Get SendGrid API key and sender email from environment variables
+        sendgrid_api_key = os.getenv('SENDGRID_API_KEY')
+        sender_email = os.getenv('SENDER_EMAIL', 'jailroster@shakerpd.com')
         
-        print(f"[EMAIL] SMTP Config: {smtp_server}:{smtp_port}, sender: {sender_email}")
+        print(f"[EMAIL] SendGrid Config - Sender: {sender_email}, Recipient: {recipient_email}")
         
-        if not sender_password:
-            return jsonify({'error': 'Email configuration not set up'}), 500
+        if not sendgrid_api_key:
+            return jsonify({'error': 'SendGrid API key not configured'}), 500
         
         # Generate PDF
         print("[EMAIL] Generating PDF...")
@@ -300,65 +295,49 @@ def export_pdf_email():
         pdf_data = generate_pdf_report(records)
         print(f"[EMAIL] PDF generated, size: {len(pdf_data)} bytes")
         
-        # Create email
-        msg = MIMEMultipart()
-        msg['From'] = sender_email
-        msg['To'] = recipient_email
-        msg['Subject'] = f'Jail Roster Report - {datetime.now().strftime("%Y-%m-%d")}'
+        # Encode PDF as base64
+        encoded_pdf = base64.b64encode(pdf_data).decode()
         
-        # Email body
-        body = f"""
-Dear Recipient,
-
-Please find attached the Jail Roster Report generated on {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}.
-
-This report contains all current inmate records in the system.
-
-Best regards,
-Shaker Police Department
-        """
+        # Create email message
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        msg.attach(MIMEText(body, 'plain'))
+        message = Mail(
+            from_email=sender_email,
+            to_emails=recipient_email,
+            subject=f'Jail Roster Report - {current_date}',
+            html_content=f'''
+            <p>Dear Recipient,</p>
+            <p>Please find attached the Jail Roster Report generated on {current_datetime}.</p>
+            <p>This report contains all current inmate records in the system.</p>
+            <p>Best regards,<br>Shaker Police Department</p>
+            '''
+        )
         
         # Attach PDF
-        attachment = MIMEBase('application', 'octet-stream')
-        attachment.set_payload(pdf_data)
-        encoders.encode_base64(attachment)
-        attachment.add_header('Content-Disposition', f'attachment; filename= jail_roster_{datetime.now().strftime("%Y-%m-%d")}.pdf')
-        msg.attach(attachment)
+        print("[EMAIL] Attaching PDF to email...")
+        attachment = Attachment(
+            FileContent(encoded_pdf),
+            FileName(f'jail_roster_{current_date}.pdf'),
+            FileType('application/pdf'),
+            Disposition('attachment')
+        )
+        message.attachment = attachment
         
-        # Send email - explicit connection management for serverless
-        print(f"[EMAIL] Connecting to SMTP server {smtp_server}:{smtp_port}...")
-        server = smtplib.SMTP(smtp_server, smtp_port, timeout=30)
-        print("[EMAIL] Starting TLS...")
-        server.starttls()
-        print("[EMAIL] Logging in...")
-        server.login(sender_email, sender_password)
-        print("[EMAIL] Sending message...")
-        server.send_message(msg)
-        print("[EMAIL] Message sent successfully")
-        server.quit()
-        server = None
+        # Send email via SendGrid
+        print("[EMAIL] Sending email via SendGrid...")
+        sg = SendGridAPIClient(sendgrid_api_key)
+        response = sg.send(message)
+        
+        print(f"[EMAIL] SendGrid response - Status: {response.status_code}")
+        print(f"[EMAIL] Email sent successfully to {recipient_email}")
         
         return jsonify({'message': 'Email sent successfully'}), 200
-    except smtplib.SMTPAuthenticationError as e:
-        print(f"[EMAIL ERROR] Authentication failed: {str(e)}")
-        print(traceback.format_exc())
-        return jsonify({'error': 'Email authentication failed. Check your credentials.'}), 500
-    except smtplib.SMTPException as e:
-        print(f"[EMAIL ERROR] SMTP error: {str(e)}")
-        print(traceback.format_exc())
-        return jsonify({'error': f'SMTP error: {str(e)}'}), 500
+        
     except Exception as e:
-        print(f"[EMAIL ERROR] Unexpected error: {str(e)}")
+        print(f"[EMAIL ERROR] Failed to send email: {str(e)}")
         print(traceback.format_exc())
         return jsonify({'error': f'Failed to send email: {str(e)}'}), 500
-    finally:
-        if server:
-            try:
-                server.quit()
-            except:
-                pass
 
 # ============================================================================
 # Import/Export (JSON)
