@@ -11,20 +11,10 @@
       "memory": 1024
     }
   },
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "jail-roster-backend/src/main.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "jail-roster-app/dist/index.html"
-    }
-  ],
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/jail-roster-app/dist/index.html"
+      "source": "/api/(.*)",
+      "destination": "/jail-roster-backend/src/main.py"
     }
   ]
 }
