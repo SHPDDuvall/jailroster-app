@@ -6,6 +6,7 @@ from flask import Blueprint, request, jsonify, send_file, current_app
 from functools import wraps
 from datetime import datetime
 import io
+import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -241,7 +242,12 @@ def generate_pdf_report(records):
             pdf.cell(col_widths[i], 8, str(data), border=1, align='L')
         pdf.ln()
     
-    return pdf.output(dest='S').encode('latin-1')
+    # Return PDF as bytes
+    pdf_output = pdf.output(dest='S')
+    if isinstance(pdf_output, str):
+        return pdf_output.encode('latin-1')
+    else:
+        return bytes(pdf_output)  # Convert bytearray to bytes
 
 @roster_bp.route('/export/pdf', methods=['GET'])
 @require_auth
