@@ -21,7 +21,7 @@ def allowed_file(filename: str) -> bool:
 # --------------------------------------------------------------------
 # ROSTER LIST – TEMPORARILY OPEN (NO AUTH CHECK)
 # --------------------------------------------------------------------
-@roster_bp.route('/roster', methods=['GET'])
+@roster_bp.route('/', methods=['GET'])
 def get_roster():
     """
     Get all roster records.
@@ -33,7 +33,7 @@ def get_roster():
     return jsonify(roster_data)
 
 
-@roster_bp.route('/roster', methods=['POST'])
+@roster_bp.route('/', methods=['POST'])
 @require_auth
 def add_roster_record():
     """Add a new roster record"""
@@ -53,7 +53,7 @@ def add_roster_record():
         return jsonify({'error': str(e)}), 500
 
 
-@roster_bp.route('/roster/<record_id>', methods=['PUT'])
+@roster_bp.route('/<record_id>', methods=['PUT'])
 @require_auth
 def update_roster_record(record_id):
     """Update an existing roster record"""
@@ -74,7 +74,7 @@ def update_roster_record(record_id):
         return jsonify({'error': str(e)}), 500
 
 
-@roster_bp.route('/roster/<record_id>', methods=['DELETE'])
+@roster_bp.route('/<record_id>', methods=['DELETE'])
 @require_role('supervisor')
 def delete_roster_record(record_id):
     """Delete a roster record"""
@@ -236,7 +236,7 @@ def export_excel():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-@roster_bp.route('/roster/<record_id>/photo', methods=['POST'])
+@roster_bp.route('/<record_id>/photo', methods=['POST'])
 @require_auth
 def upload_mugshot(record_id):
     """Upload and watermark a mugshot for a roster record"""
@@ -301,7 +301,7 @@ def upload_mugshot(record_id):
     return jsonify({'message': 'Photo uploaded successfully'}), 200
 
 
-@roster_bp.route('/roster/<record_id>/photo', methods=['GET'])
+@roster_bp.route('/<record_id>/photo', methods=['GET'])
 @require_auth
 def get_mugshot(record_id):
     """Return the mugshot image file for a record"""
