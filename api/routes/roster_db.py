@@ -13,7 +13,14 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
 from fpdf import FPDF
 from ..models.roster import db, Roster
-from ..logo_data import LOGO_BASE64
+
+# Try to import logo, but don't fail if it doesn't exist
+try:
+    from ..logo_data import LOGO_BASE64
+    HAS_LOGO = True
+except ImportError:
+    HAS_LOGO = False
+    LOGO_BASE64 = None
 
 roster_bp = Blueprint('roster', __name__)
 
@@ -196,16 +203,21 @@ def generate_pdf_report(records):
     pdf.rect(0, 0, 297, 30, 'F')
     
     # Add logo from base64
-    try:
-        import tempfile
-        logo_bytes = base64.b64decode(LOGO_BASE64)
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as tmp:
-            tmp.write(logo_bytes)
-            tmp_path = tmp.name
-        pdf.image(tmp_path, x=10, y=5, w=20)  # Logo on the left
-        os.unlink(tmp_path)  # Clean up temp file
-    except Exception as e:
-        print(f"Warning: Could not add logo to PDF: {e}")
+    if HAS_LOGO and LOGO_BASE64:
+        try:
+            import tempfile
+            logo_bytes = base64.b64decode(LOGO_BASE64)
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as tmp:
+                tmp.write(logo_bytes)
+                tmp_path = tmp.name
+            pdf.image(tmp_path, x=10, y=5, w=20)  # Logo on the left
+            os.unlink(tmp_path)  # Clean up temp file
+            print("[PDF] Logo added successfully")
+        except Exception as e:
+            print(f"[PDF ERROR] Could not add logo: {e}")
+            traceback.print_exc()
+    else:
+        print("[PDF WARNING] Logo data not available, skipping logo")
     
     # Title
     pdf.set_text_color(255, 255, 255)  # White text

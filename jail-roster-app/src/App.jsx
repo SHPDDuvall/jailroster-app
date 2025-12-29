@@ -201,6 +201,29 @@ function App() {
     }
   }
 
+  const handlePrint = async () => {
+    try {
+      setIsExporting(true)
+      const response = await fetch('/api/roster/export/pdf', { credentials: 'include' })
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        // Open PDF in new window for printing
+        window.open(url, '_blank')
+        // Clean up after a delay to allow the window to open
+        setTimeout(() => window.URL.revokeObjectURL(url), 1000)
+      } else {
+        const error = await response.text()
+        alert(`Failed to open PDF: ${error}`)
+      }
+    } catch (error) {
+      console.error('Error opening PDF:', error)
+      alert('Failed to open PDF')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   const handleSendEmail = async () => {
     if (!emailAddress) {
       alert('Please enter an email address')
@@ -281,7 +304,7 @@ function App() {
               {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
               Export PDF
             </Button>
-            <Button onClick={handleExportPDF} size="sm" variant="outline" disabled={isExporting}>
+            <Button onClick={handlePrint} size="sm" variant="outline" disabled={isExporting}>
               {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
               Print
             </Button>
