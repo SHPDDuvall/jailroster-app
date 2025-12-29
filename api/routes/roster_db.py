@@ -13,6 +13,7 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
 from fpdf import FPDF
 from ..models.roster import db, Roster
+from ..logo_data import LOGO_BASE64
 
 roster_bp = Blueprint('roster', __name__)
 
@@ -194,10 +195,17 @@ def generate_pdf_report(records):
     pdf.set_fill_color(25, 25, 112)  # Navy blue background
     pdf.rect(0, 0, 297, 30, 'F')
     
-    # Add logo
-    logo_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'new-shpd-logo.png')
-    if os.path.exists(logo_path):
-        pdf.image(logo_path, x=10, y=5, w=20)  # Logo on the left
+    # Add logo from base64
+    try:
+        import tempfile
+        logo_bytes = base64.b64decode(LOGO_BASE64)
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as tmp:
+            tmp.write(logo_bytes)
+            tmp_path = tmp.name
+        pdf.image(tmp_path, x=10, y=5, w=20)  # Logo on the left
+        os.unlink(tmp_path)  # Clean up temp file
+    except Exception as e:
+        print(f"Warning: Could not add logo to PDF: {e}")
     
     # Title
     pdf.set_text_color(255, 255, 255)  # White text
