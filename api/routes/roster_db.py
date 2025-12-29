@@ -106,13 +106,56 @@ def update_record(record_id):
         if not data:
             return jsonify({'error': 'No data provided'}), 400
         
-        # Update the record
-        updated_record = Roster.from_dict(data)
+        # Update the record fields directly
+        from datetime import datetime as dt
         
-        # Copy attributes from the updated record to the existing one
-        for key, value in updated_record.to_dict().items():
-            if key != 'id':  # Don't update the ID
-                setattr(record, key, getattr(updated_record, key))
+        # Helper functions
+        def parse_datetime(dt_str):
+            if not dt_str:
+                return None
+            try:
+                return dt.fromisoformat(dt_str.replace('Z', '+00:00'))
+            except (ValueError, AttributeError):
+                return None
+        
+        def parse_date(date_str):
+            if not date_str:
+                return None
+            try:
+                return dt.fromisoformat(date_str).date()
+            except (ValueError, AttributeError):
+                return None
+        
+        # Update all fields
+        record.jail_location = data.get('jailLocation', record.jail_location)
+        record.cell = data.get('cell', record.cell)
+        record.day_number = data.get('dayNumber', record.day_number)
+        record.total_number = data.get('totalNumber', record.total_number)
+        record.name = data.get('name', record.name)
+        record.dob = parse_date(data.get('dob', '')) or record.dob
+        record.ssn = data.get('ssn', record.ssn)
+        record.sex_m = data.get('sexM', record.sex_m)
+        record.sex_f = data.get('sexF', record.sex_f)
+        record.oca_number = data.get('ocaNumber', record.oca_number)
+        record.arrest_date_time = parse_datetime(data.get('arrestDateTime', '')) or record.arrest_date_time
+        record.misdemeanor = data.get('misdemeanor', record.misdemeanor)
+        record.felony = data.get('felony', record.felony)
+        record.charges = data.get('charges', record.charges)
+        record.court_packet = data.get('courtPacket', record.court_packet)
+        record.inst = data.get('inst', record.inst)
+        record.court_case_ticket = data.get('courtCaseTicket', record.court_case_ticket)
+        record.bond_change_notice = data.get('bondChangeNotice', record.bond_change_notice)
+        record.bond = data.get('bond', record.bond)
+        record.waiver = data.get('waiver', record.waiver)
+        record.court_date = parse_date(data.get('courtDate', '')) or record.court_date
+        record.release_date_time = parse_datetime(data.get('releaseDateTime', '')) or record.release_date_time
+        record.holders_notes = data.get('holdersNotes', record.holders_notes)
+        record.charging_docs = data.get('chargingDocs', record.charging_docs)
+        
+        # Handle photo data properly
+        photo_data = data.get('suspectPhotoBase64', '')
+        if photo_data:
+            record.suspect_photo_base64 = photo_data.encode('utf-8') if isinstance(photo_data, str) else photo_data
         
         db.session.commit()
         
