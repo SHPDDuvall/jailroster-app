@@ -18,9 +18,10 @@ def create_app():
     # Configuration
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
-    app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
+    app.config['SESSION_COOKIE_SECURE'] = True  # Always use secure cookies in production
     app.config['SESSION_COOKIE_HTTPONLY'] = True
-    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Required for cross-origin requests
+    app.config['SESSION_TYPE'] = 'filesystem'  # Use filesystem for session storage
     
     # Database configuration
     database_url = os.getenv('DATABASE_URL', 'sqlite:///app.db')
@@ -35,8 +36,12 @@ def create_app():
     # Initialize database
     db.init_app(app)
     
-    # Enable CORS
-    CORS(app, supports_credentials=True)
+    # Enable CORS with specific origins
+    CORS(app, 
+         supports_credentials=True,
+         origins=['https://jailroster.shakerpd.com', 'https://jailroster-deploy.vercel.app', 'https://*.vercel.app'],
+         allow_headers=['Content-Type', 'Authorization'],
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
     
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
