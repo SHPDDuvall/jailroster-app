@@ -21,7 +21,7 @@ def require_auth(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         from flask import session
-        if 'user' not in session:
+        if 'user_id' not in session:
             return jsonify({'error': 'Unauthorized'}), 401
         return f(*args, **kwargs)
     return decorated_function
@@ -32,9 +32,9 @@ def require_role(required_role):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             from flask import session
-            if 'user' not in session:
+            if 'user_id' not in session:
                 return jsonify({'error': 'Unauthorized'}), 401
-            user = session.get('user', {})
+            user = {'role': session.get('user_role')}
             if user.get('role') != required_role and user.get('role') != 'admin':
                 return jsonify({'error': 'Forbidden'}), 403
             return f(*args, **kwargs)
