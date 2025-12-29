@@ -1,4 +1,10 @@
 {
   "buildCommand": "cd jail-roster-app && npm install && npm run build",
-  "outputDirectory": "jail-roster-app/dist"
+  "outputDirectory": "jail-roster-app/dist",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
+    }
+  ]
 }
