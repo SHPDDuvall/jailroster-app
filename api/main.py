@@ -4,7 +4,6 @@ Flask application entry point with SQLAlchemy database support.
 
 from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
-from flask_session import Session
 import os
 from datetime import timedelta
 from .models.roster import db
@@ -22,10 +21,7 @@ def create_app():
     app.config['SESSION_COOKIE_SECURE'] = True  # Always use secure cookies in production
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Required for cross-origin requests
-    app.config['SESSION_TYPE'] = 'sqlalchemy'  # Use database for session storage
-    app.config['SESSION_SQLALCHEMY'] = db  # Use the same database connection
-    app.config['SESSION_PERMANENT'] = True  # Make sessions permanent
-    app.config['SESSION_USE_SIGNER'] = True  # Sign session cookies for security
+    app.config['SESSION_COOKIE_NAME'] = 'jail_roster_session'  # Custom session cookie name
     
     # Database configuration
     database_url = os.getenv('DATABASE_URL', 'sqlite:///app.db')
@@ -39,9 +35,6 @@ def create_app():
     
     # Initialize database
     db.init_app(app)
-    
-    # Initialize Flask-Session
-    Session(app)
     
     # Enable CORS with specific origins
     CORS(app, 
