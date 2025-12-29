@@ -61,7 +61,7 @@ function App() {
 
   const checkAuthStatus = async () => {
     try {
-      const response = await fetch('/api/auth/me')
+      const response = await fetch('/api/auth/me', { credentials: 'include' })
       if (response.ok) {
         const data = await response.json()
         setUser(data.user)
@@ -81,7 +81,7 @@ function App() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' })
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
@@ -93,7 +93,7 @@ function App() {
 
   const fetchRosterData = async () => {
     try {
-      const response = await fetch('/api/roster')
+      const response = await fetch('/api/roster', { credentials: 'include' })
       if (response.ok) {
         const data = await response.json()
         setRosterData(data)
@@ -135,6 +135,7 @@ function App() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updatedRecord),
+          credentials: 'include',
         })
         if (response.ok) await fetchRosterData()
         else if (response.status === 401) setUser(null)
@@ -143,6 +144,7 @@ function App() {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updatedRecord),
+          credentials: 'include',
         })
         if (response.ok) await fetchRosterData()
         else if (response.status === 401) setUser(null)
@@ -156,7 +158,7 @@ function App() {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this record?')) return
     try {
-      const response = await fetch(`/api/roster/${id}`, { method: 'DELETE' })
+      const response = await fetch(`/api/roster/${id}`, { method: 'DELETE', credentials: 'include' })
       if (response.ok) await fetchRosterData()
       else if (response.status === 401) setUser(null)
     } catch (error) {
@@ -167,7 +169,7 @@ function App() {
   const handleExportPDF = async () => {
     try {
       setIsExporting(true)
-      const response = await fetch('/api/roster/export/pdf')
+      const response = await fetch('/api/roster/export/pdf', { credentials: 'include' })
       if (response.ok) {
         const blob = await response.blob()
         const url = window.URL.createObjectURL(blob)
@@ -199,6 +201,7 @@ function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: emailAddress }),
+        credentials: 'include',
       })
 
       if (response.ok) {
