@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Diagnostic Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #0070f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0051cc;
+        }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .success { color: #0f0; }
+        .error { color: #f00; }
+        .info { color: #0ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Jail Roster Login Diagnostic</h1>
+        <p>This page will help diagnose the cookie/session issue.</p>
+        
+        <div>
+            <button onclick="testLogin()">1. Test Login</button>
+            <button onclick="checkAuth()">2. Check Auth Status</button>
+            <button onclick="testRoster()">3. Test Roster API</button>
+            <button onclick="showCookies()">4. Show Cookies</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            logEl.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        async function testLogin() {
+            log('=== TESTING LOGIN ===', 'info');
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin123'
+                    }),
+                    credentials: 'include'
+                });
+
+                log(`Response Status: ${response.status} ${response.statusText}`, 'info');
+                log(`Response Headers:`, 'info');
+                for (let [key, value] of response.headers.entries()) {
+                    log(`  ${key}: ${value}`, 'info');
+                }
+
+                const data = await response.json();
+                log(`Response Body: ${JSON.stringify(data, null, 2)}`, response.ok ? 'success' : 'error');
+
+                if (response.ok) {
+                    log('✓ Login successful!', 'success');
+                    showCookies();
+                } else {
+                    log('✗ Login failed!', 'error');
+                }
+            } catch (error) {
+                log(`✗ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkAuth() {
+            log('=== CHECKING AUTH STATUS ===', 'info');
+            try {
+                const response = await fetch('/api/auth/me', {
+                    credentials: 'include'
+                });
+
+                log(`Response Status: ${response.status} ${response.statusText}`, 'info');
+                
+                const data = await response.json();
+                log(`Response Body: ${JSON.stringify(data, null, 2)}`, response.ok ? 'success' : 'error');
+
+                if (response.ok) {
+                    log('✓ Authenticated!', 'success');
+                } else {
+                    log('✗ Not authenticated!', 'error');
+                }
+            } catch (error) {
+                log(`✗ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testRoster() {
+            log('=== TESTING ROSTER API ===', 'info');
+            try {
+                const response = await fetch('/api/roster', {
+                    credentials: 'include'
+                });
+
+                log(`Response Status: ${response.status} ${response.statusText}`, 'info');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✓ Roster data received: ${data.length} records`, 'success');
+                } else {
+                    const data = await response.json();
+                    log(`✗ Roster request failed: ${JSON.stringify(data)}`, 'error');
+                }
+            } catch (error) {
+                log(`✗ Error: ${error.message}`, 'error');
+            }
+        }
+
+        function showCookies() {
+            log('=== CURRENT COOKIES ===', 'info');
+            const cookies = document.cookie;
+            if (cookies) {
+                log(`Cookies: ${cookies}`, 'success');
+                cookies.split(';').forEach(cookie => {
+                    log(`  ${cookie.trim()}`, 'success');
+                });
+            } else {
+                log('No cookies found!', 'error');
+            }
+        }
+
+        // Initial log
+        log('Diagnostic page loaded. Click buttons to test.', 'info');
+        log('', 'info');
+    </script>
+</body>
+</html>
