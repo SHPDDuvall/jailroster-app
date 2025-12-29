@@ -1,0 +1,13 @@
+node_modules/
+venv/
+__pycache__/
+*.pyc
+.env.local
+.env
+.DS_Store
+dist/
+.vercel
+*.log
+uploads/
+.htaccess
+dispatch.fcgi
