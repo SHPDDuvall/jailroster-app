@@ -4,7 +4,7 @@ import json
 import os
 from datetime import datetime
 from io import BytesIO
-from routes.auth import require_auth, require_role
+from .auth import require_auth, require_role
 
 roster_bp = Blueprint('roster', __name__)
 

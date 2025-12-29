@@ -3,7 +3,7 @@ import pandas as pd
 import os
 from datetime import datetime
 from io import BytesIO
-from routes.auth import require_auth, require_role
+from .auth import require_auth, require_role
 
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageDraw, ImageFont

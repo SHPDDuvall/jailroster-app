@@ -6,9 +6,9 @@ from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 import os
 from datetime import timedelta
-from models.roster import db
-from routes.auth import auth_bp
-from routes.roster_db import roster_bp
+from .models.roster import db
+from .routes.auth import auth_bp
+from .routes.roster_db import roster_bp
 
 def create_app():
     """Create and configure the Flask application."""

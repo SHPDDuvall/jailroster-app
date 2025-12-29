@@ -12,7 +12,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
 from fpdf import FPDF
-from models.roster import db, Roster
+from ..models.roster import db, Roster
 
 roster_bp = Blueprint('roster', __name__)
 
