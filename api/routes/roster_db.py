@@ -8,6 +8,7 @@ from datetime import datetime
 import io
 import os
 import smtplib
+import traceback
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -274,6 +275,7 @@ def export_pdf():
 @require_auth
 def export_pdf_email():
     """Send roster as PDF via email."""
+    server = None
     try:
         data = request.get_json()
         recipient_email = data.get('email')
@@ -287,12 +289,16 @@ def export_pdf_email():
         sender_email = os.getenv('SENDER_EMAIL', 'noreply@shakerpd.com')
         sender_password = os.getenv('SENDER_PASSWORD', '')
         
+        print(f"[EMAIL] SMTP Config: {smtp_server}:{smtp_port}, sender: {sender_email}")
+        
         if not sender_password:
             return jsonify({'error': 'Email configuration not set up'}), 500
         
         # Generate PDF
+        print("[EMAIL] Generating PDF...")
         records = Roster.query.all()
         pdf_data = generate_pdf_report(records)
+        print(f"[EMAIL] PDF generated, size: {len(pdf_data)} bytes")
         
         # Create email
         msg = MIMEMultipart()
@@ -321,20 +327,38 @@ Shaker Police Department
         attachment.add_header('Content-Disposition', f'attachment; filename= jail_roster_{datetime.now().strftime("%Y-%m-%d")}.pdf')
         msg.attach(attachment)
         
-        # Send email with timeout
-        with smtplib.SMTP(smtp_server, smtp_port, timeout=30) as server:
-            server.set_debuglevel(0)
-            server.starttls()
-            server.login(sender_email, sender_password)
-            server.send_message(msg)
+        # Send email - explicit connection management for serverless
+        print(f"[EMAIL] Connecting to SMTP server {smtp_server}:{smtp_port}...")
+        server = smtplib.SMTP(smtp_server, smtp_port, timeout=30)
+        print("[EMAIL] Starting TLS...")
+        server.starttls()
+        print("[EMAIL] Logging in...")
+        server.login(sender_email, sender_password)
+        print("[EMAIL] Sending message...")
+        server.send_message(msg)
+        print("[EMAIL] Message sent successfully")
+        server.quit()
+        server = None
         
         return jsonify({'message': 'Email sent successfully'}), 200
-    except smtplib.SMTPAuthenticationError:
+    except smtplib.SMTPAuthenticationError as e:
+        print(f"[EMAIL ERROR] Authentication failed: {str(e)}")
+        print(traceback.format_exc())
         return jsonify({'error': 'Email authentication failed. Check your credentials.'}), 500
     except smtplib.SMTPException as e:
+        print(f"[EMAIL ERROR] SMTP error: {str(e)}")
+        print(traceback.format_exc())
         return jsonify({'error': f'SMTP error: {str(e)}'}), 500
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"[EMAIL ERROR] Unexpected error: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({'error': f'Failed to send email: {str(e)}'}), 500
+    finally:
+        if server:
+            try:
+                server.quit()
+            except:
+                pass
 
 # ============================================================================
 # Import/Export (JSON)
