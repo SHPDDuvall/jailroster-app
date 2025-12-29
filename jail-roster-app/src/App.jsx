@@ -188,6 +188,10 @@ function App() {
         a.click()
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
+        alert('PDF downloaded successfully!')
+      } else {
+        const error = await response.text()
+        alert(`Failed to export PDF: ${error}`)
       }
     } catch (error) {
       console.error('Error exporting PDF:', error)

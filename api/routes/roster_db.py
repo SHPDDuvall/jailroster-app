@@ -321,8 +321,9 @@ Shaker Police Department
         attachment.add_header('Content-Disposition', f'attachment; filename= jail_roster_{datetime.now().strftime("%Y-%m-%d")}.pdf')
         msg.attach(attachment)
         
-        # Send email
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
+        # Send email with timeout
+        with smtplib.SMTP(smtp_server, smtp_port, timeout=30) as server:
+            server.set_debuglevel(0)
             server.starttls()
             server.login(sender_email, sender_password)
             server.send_message(msg)
