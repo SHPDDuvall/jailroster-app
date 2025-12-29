@@ -1,0 +1,83 @@
+/* Print-specific styles for clean PDF output */
+
+@media print {
+  /* Hide everything except the roster table */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Show only the table and its contents */
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  
+  /* Hide UI elements */
+  button,
+  .search-bar,
+  .tabs,
+  .edit-buttons,
+  nav,
+  header,
+  footer {
+    display: none !important;
+  }
+  
+  /* Hide action columns */
+  th:last-child,
+  td:last-child {
+    display: none !important;
+  }
+  
+  /* Table styling for print */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+  }
+  
+  th, td {
+    border: 1px solid #000;
+    padding: 4px 6px;
+    text-align: left;
+  }
+  
+  th {
+    background-color: #f0f0f0 !important;
+    font-weight: bold;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* Page breaks */
+  tr {
+    page-break-inside: avoid;
+  }
+  
+  thead {
+    display: table-header-group;
+  }
+  
+  /* Add header */
+  .print-area::before {
+    content: "Jail Roster Report";
+    display: block;
+    font-size: 18pt;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  
+  /* Landscape orientation hint */
+  @page {
+    size: landscape;
+    margin: 0.5in;
+  }
+}

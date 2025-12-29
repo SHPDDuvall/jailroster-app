@@ -277,6 +277,10 @@ function App() {
               {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
               Export PDF
             </Button>
+            <Button onClick={() => window.print()} size="sm" variant="outline">
+              <FileText className="h-4 w-4 mr-2" />
+              Print
+            </Button>
             <Button onClick={() => setShowEmailModal(true)} size="sm" variant="outline">
               <Mail className="h-4 w-4 mr-2" />
               Email Report
@@ -333,7 +337,7 @@ function App() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto print-area">
                   <Table>
                     <TableHeader>
                       <TableRow>
