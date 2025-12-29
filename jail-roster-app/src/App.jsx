@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label.jsx'
 import { Textarea } from '@/components/ui/textarea.jsx'
 import { Checkbox } from '@/components/ui/checkbox.jsx'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table.jsx'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx'
 import { Upload, Download, Plus, Edit, Trash2, Search, Filter, Users, Calendar, AlertCircle, FileUp, Loader2, LogOut, User, Settings, X, Image as ImageIcon, ZoomIn, FileText, Mail } from 'lucide-react'
 import LoginForm from './components/LoginForm.jsx'
 import './App.css'
@@ -25,6 +26,7 @@ function App() {
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [emailAddress, setEmailAddress] = useState('')
   const [isSendingEmail, setIsSendingEmail] = useState(false)
+  const [activeTab, setActiveTab] = useState('active')
 
   const emptyRecord = {
     id: '',
@@ -106,11 +108,17 @@ function App() {
     }
   }
 
+  // Separate active and released inmates
+  const activeInmates = rosterData.filter(record => !record.releaseDateTime)
+  const releasedInmates = rosterData.filter(record => record.releaseDateTime)
+
   useEffect(() => {
+    const dataToFilter = activeTab === 'active' ? activeInmates : releasedInmates
+    
     if (searchTerm === '') {
-      setFilteredData(rosterData)
+      setFilteredData(dataToFilter)
     } else {
-      const filtered = rosterData.filter(record =>
+      const filtered = dataToFilter.filter(record =>
         record.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         record.cell.toLowerCase().includes(searchTerm.toLowerCase()) ||
         record.ocaNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -118,7 +126,7 @@ function App() {
       )
       setFilteredData(filtered)
     }
-  }, [searchTerm, rosterData])
+  }, [searchTerm, rosterData, activeTab])
 
   const handleAdd = () => {
     if (editingRecord && editingRecord.id.startsWith('new-')) {
@@ -305,31 +313,43 @@ function App() {
           </Card>
         )}
 
-        {/* Inmate Records Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Inmate Records ({filteredData.length})</CardTitle>
-            <CardDescription>
-              Current jail roster with inmate information and status
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[8%]">Photo</TableHead>
-                    <TableHead className="w-[8%]">Location</TableHead>
-                    <TableHead className="w-[5%]">Cell</TableHead>
-                    <TableHead className="w-[15%]">Name</TableHead>
-                    <TableHead className="w-[10%]">OCA #</TableHead>
-                    <TableHead className="w-[10%]">Arrest Date</TableHead>
-                    <TableHead className="w-[25%]">Charges</TableHead>
-                    <TableHead className="w-[10%]">Status</TableHead>
-                    <TableHead className="w-[9%]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+        {/* Inmate Records Table with Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+            <TabsTrigger value="active">
+              Active Inmates ({activeInmates.length})
+            </TabsTrigger>
+            <TabsTrigger value="released">
+              Released / History ({releasedInmates.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="active">
+            <Card>
+              <CardHeader>
+                <CardTitle>Active Inmates ({filteredData.length})</CardTitle>
+                <CardDescription>
+                  Current inmates in custody
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[8%]">Photo</TableHead>
+                        <TableHead className="w-[8%]">Location</TableHead>
+                        <TableHead className="w-[5%]">Cell</TableHead>
+                        <TableHead className="w-[15%]">Name</TableHead>
+                        <TableHead className="w-[10%]">OCA #</TableHead>
+                        <TableHead className="w-[10%]">Arrest Date</TableHead>
+                        <TableHead className="w-[25%]">Charges</TableHead>
+                        <TableHead className="w-[10%]">Status</TableHead>
+                        <TableHead className="w-[9%]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+
                   {filteredData.map((record) => (
                     <React.Fragment key={record.id}>
                       <TableRow className="bg-white hover:bg-gray-50">
@@ -422,11 +442,112 @@ function App() {
             {filteredData.length === 0 && (
               <div className="text-center py-8">
                 <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No records found matching your search criteria.</p>
+                <p className="text-gray-500">No active inmates found matching your search criteria.</p>
               </div>
             )}
           </CardContent>
         </Card>
+      </TabsContent>
+
+      <TabsContent value="released">
+        <Card>
+          <CardHeader>
+            <CardTitle>Released Inmates / History ({filteredData.length})</CardTitle>
+            <CardDescription>
+              Historical records of released inmates
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[8%]">Photo</TableHead>
+                    <TableHead className="w-[15%]">Name</TableHead>
+                    <TableHead className="w-[10%]">OCA #</TableHead>
+                    <TableHead className="w-[10%]">Arrest Date</TableHead>
+                    <TableHead className="w-[10%]">Release Date</TableHead>
+                    <TableHead className="w-[20%]">Charges</TableHead>
+                    <TableHead className="w-[8%]">Location</TableHead>
+                    <TableHead className="w-[10%]">Days Held</TableHead>
+                    <TableHead className="w-[9%]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredData.map((record) => {
+                    const arrestDate = new Date(record.arrestDateTime)
+                    const releaseDate = new Date(record.releaseDateTime)
+                    const daysHeld = Math.ceil((releaseDate - arrestDate) / (1000 * 60 * 60 * 24))
+                    
+                    return (
+                      <TableRow key={record.id} className="bg-white hover:bg-gray-50">
+                        <TableCell>
+                          {record.suspectPhotoBase64 ? (
+                            <img
+                              src={record.suspectPhotoBase64}
+                              alt={record.name}
+                              className="h-12 w-12 rounded object-cover cursor-pointer"
+                              onClick={() => setSelectedPhotoRecord(record)}
+                            />
+                          ) : (
+                            <div className="h-12 w-12 rounded bg-gray-200 flex items-center justify-center">
+                              <User className="h-6 w-6 text-gray-400" />
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">{record.name}</TableCell>
+                        <TableCell>{record.ocaNumber}</TableCell>
+                        <TableCell>
+                          {record.arrestDateTime ? new Date(record.arrestDateTime).toLocaleDateString() : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          {record.releaseDateTime ? new Date(record.releaseDateTime).toLocaleDateString() : 'N/A'}
+                        </TableCell>
+                        <TableCell className="max-w-xs truncate" title={record.charges}>
+                          {record.charges}
+                        </TableCell>
+                        <TableCell>{record.jailLocation} {record.cell}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="bg-gray-100">
+                            {daysHeld} {daysHeld === 1 ? 'day' : 'days'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setEditingRecord(record)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDelete(record.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+
+            {filteredData.length === 0 && (
+              <div className="text-center py-8">
+                <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">No released inmates found matching your search criteria.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
       </main>
 
       {/* Photo Modal */}
