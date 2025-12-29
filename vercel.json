@@ -1,20 +1,4 @@
 {
-  "version": 2,
   "buildCommand": "cd jail-roster-app && npm install && npm run build",
-  "outputDirectory": "jail-roster-app/dist",
-  "env": {
-    "PYTHON_VERSION": "3.11"
-  },
-  "functions": {
-    "jail-roster-backend/src/main.py": {
-      "runtime": "python3.11",
-      "memory": 1024
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/jail-roster-backend/src/main.py"
-    }
-  ]
+  "outputDirectory": "jail-roster-app/dist"
 }
